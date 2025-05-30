@@ -10,6 +10,7 @@ const App: React.FC = () => {
   const [input, setInput] = useState('');
   const [isDictating, setIsDictating] = useState(false);
   const recognitionRef = useRef<SpeechRecognition | null>(null);
+  const [message, setMessage] = useState('');
 
   // Setup Web Speech API
   const getRecognition = () => {
@@ -48,16 +49,26 @@ const App: React.FC = () => {
     setIsDictating(true);
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    alert(`Submitted: ${input}`);
-    // TODO: Call backend API
+    setMessage('');
+    try {
+      const res = await fetch('http://localhost:8000/check-answer', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ answer: input })
+      });
+      const data = await res.json();
+      setMessage(data.result);
+    } catch (err) {
+      setMessage('Error connecting to backend.');
+    }
   };
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50 p-4">
+    <div className="w-screen h-screen min-h-screen flex flex-col items-center justify-center bg-gray-50 p-4">
       <form onSubmit={handleSubmit} className="w-full max-w-md bg-white rounded-lg shadow p-6 flex flex-col gap-4">
-        <label htmlFor="topic" className="font-semibold text-lg">Enter a topic</label>
+        <label htmlFor="topic" className="font-semibold text-lg text-black">Type answer</label>
         <div className="flex gap-2">
           <input
             id="topic"
@@ -84,6 +95,11 @@ const App: React.FC = () => {
           Submit
         </button>
       </form>
+      {message && (
+        <div className="mt-4 w-full max-w-md bg-gray-100 rounded-lg shadow p-4 text-center text-black">
+          {message}
+        </div>
+      )}
     </div>
   );
 };
